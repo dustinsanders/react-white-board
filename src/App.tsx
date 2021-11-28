@@ -1,38 +1,18 @@
-import { useCallback, useState } from 'react'
 import Drawer from './components/Drawer'
-import Image, { ImageInterface } from './components/Image'
-import StickyNote, { StickyNoteInterface } from './components/StickyNote'
+import ElementWrapper from './components/ElementWrapper'
+import { Pane } from 'evergreen-ui'
 import {
-  ArrowUpIcon,
-  Pane,
-  LabelIcon,
-  ImageRotateRightIcon,
-} from 'evergreen-ui'
-import uniqueId from 'lodash/uniqueId'
-
-type Element = StickyNoteInterface | ImageInterface
+  useStoreState,
+  useStoreActions,
+} from './store/hooks'
 
 function App() {
-  const [elements, setElements] = useState<Element[]>([])
-  const [activeKind, setActiveKind] = useState<'' | 'sticky-note' | 'image'>('')
-
-  const updateElement = useCallback(
-    (id: string, update: {}) => {
-      setElements(
-        elements.map(element =>
-          element.id === id
-            ? {
-              ...element,
-              ...update,
-            }
-            : element
-        )
-      )
-    },
-    [elements],
-  )
-
-  // const deleteElement = (id: string) =>
+  const {
+    elements,
+  } = useStoreState(state => state.board)
+  const {
+    addElement,
+  } = useStoreActions(store => store.board)
 
   return (
     <Pane
@@ -46,57 +26,19 @@ function App() {
         width="100%"
         height="100%"
         zIndex={-1}
-        onClick={(evt: any) => {
-          if (activeKind !== '') {
-            setElements([
-              ...elements,
-              {
-                id: uniqueId(),
-                kind: activeKind,
-                x: evt.clientX,
-                y: evt.clientY,
-              }
-            ])
-            setActiveKind('')
-          }
+        onClick={(evt: React.MouseEvent<HTMLElement>) => {
+          addElement({
+            x: evt.clientX,
+            y: evt.clientY,
+          })
         }}
       />
-      <Drawer
-        activeKind={activeKind}
-        setActiveKind={setActiveKind}
-        buttons={[
-          {
-            tooltip: 'Pointer',
-            Icon: ArrowUpIcon,
-            kind: '',
-          },
-          {
-            tooltip: 'Sticky Note',
-            Icon: LabelIcon,
-            kind: 'sticky-note',
-          },
-          {
-            tooltip: 'Image',
-            Icon: ImageRotateRightIcon,
-            kind: 'image'
-          }
-        ]}
-      />
       {
-        elements.map(element => {
-          switch (element.kind) {
-            case 'sticky-note':
-              return <StickyNote key={element.id} {...element} />
-            case 'image':
-              return <Image key={element.id} {...element} updateElement={updateElement} />
-            default: {
-              const exhaustiveCheck: never = element
-
-              return exhaustiveCheck
-            }
-          }
-        })
+        elements.map(element => (
+          <ElementWrapper key={element.id} {...element} />
+        ))
       }
+      <Drawer  />
     </Pane>
   )
 }
